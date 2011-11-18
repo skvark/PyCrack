@@ -30,19 +30,25 @@ class PyCrack:
         # Urllib2 client
         self.opener = urllib2.build_opener()
         self.opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+        self.default_timeout = 20
         
         # File handlers
         self.found_file = open('results/found.txt', 'a+')
         self.not_found_file = open('results/notfound.txt', 'a+')
         self.result_file  = open('results/results.txt', 'a+')
+        
+        # Statistics :)
+        self.found_counter = 0
     
     def init_wordlist(self, wl):
+        """ Todo: Load some wordlist here, from sqlite/textfile or such """
         return []
     
     def found(self, result):
         """ Writes found string to file """
         if result:
             self.found_file.write(result + '\n')
+            self.found_counter += 1
     
     def not_found(self, result):
         """ Writes to "not found" file """
@@ -72,19 +78,45 @@ class PyCrack:
             print notfound
             # Saves hash to "not found" list
             self.not_found(hash)
+        return False
 
     def crack_hashes(self):
         for hash in self.hashes:
-            self.google_crack(hash)
-            
+            print
+            print "Starting Google crack"
+            result = self.google_crack(hash)
+            if result == False:
+                print "Falling back to MD5 site search"
+                result = self.reverse_site_search(hash)
+
+    
+    def reverse_site_search(self, hash):
+        md5_crackers = ['http://md5.thekaine.de/?hash=',
+                        'http://md5.rednoize.com/?&s=md5&go.x=0&go.y=0&q=']
+        for site in md5_crackers:
+            try:
+                page_handle = self.opener.open('%s%s' % (site,hash), \
+                                timeout=self.default_timeout)
+            except urllib2.URLError as e:
+                self.logger.warn("URL error %s", e.message)
+                return
+                
+            # Read page to a string
+            site_wordlist = re.split(r"\s+", str(page_handle.read()))
+
+            for word in site_wordlist:
+                self.wordlist.append(word)
+            result = self.dictionary_attack(hash, self.wordlist)
+            return result
+
     def google_crack(self, hash):
         """ Do a google search for the hash and add found words to the wordlist """
         try:
             page_handle = self.opener.open('http://www.google.com/search?q=%s' \
-                                    % hash, timeout=10)
+                                    % hash, timeout=self.default_timeout)
         except urllib2.URLError as e:
             self.logger.warn("URL error %s", e.message)
-            return
+            return False
             
         # Read page to a string
         google_wordlist = re.split(r"\s+", str(page_handle.read()))
