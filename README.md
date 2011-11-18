@@ -1,7 +1,7 @@
 ## PyCrack
 The idea behind this rather simple piece of software can be found from here:      
 
-[BozoCrack](https://github.com/juuso/BozoCrack/blob/master/README.md)
+[BozoCrack](https://github.com/juuso/BozoCrack)
 
 ### Usage 
 
