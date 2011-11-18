@@ -5,7 +5,12 @@ The idea behind this rather simple piece of software can be found from here:
 
 ### Usage 
 
-Just run the script and specify a file which contains md5 hashes.            
+Just run the script and specify a file which contains md5 hashes.    
+
+Example:     
+ 
+python pycrack.py file_with_hashes      
+python pycrack.py (this will ask for the file)        
 
 Output will be saved to output.txt, script prints into command line too.
 
