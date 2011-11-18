@@ -5,7 +5,7 @@ The idea behind this rather simple piece of software can be found from here:
 
 ### Usage 
 
-Just run the script and speficy a file which contains md5 hashes.            
+Just run the script and specify a file which contains md5 hashes.            
 
 Output will be saved to output.txt, script prints into command line too.
 
