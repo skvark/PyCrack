@@ -4,6 +4,7 @@ import urllib2
 import re
 import logging
 from sys import argv
+from libs.db import *
 
 # Very simple md5 cracking with Google, idea taken from
 # https://github.com/juuso/BozoCrack/blob/master/BozoCrack.rb
@@ -14,13 +15,17 @@ class PyCrack:
     """ PyCrack tries to google each hash trying to find
 	an occurrence """
     def __init__(self, filename, wordlist = None):
+        # Logger
         logging.basicConfig(
           level=logging.DEBUG,
           format='(%(threadName)-10s) %(message)s')
         self.logger = logging.getLogger()
-        self.hashes = []
+        
+        # Open hash file
         fhandle = open(filename,'r')
         hash_list = fhandle.read()
+        
+        # Get all the hashes.
         hashes = re.findall(r"([a-fA-F\d]{32})", str(hash_list))
         self.hashes = list(set(hashes))  # removes duplicates
         
@@ -39,6 +44,9 @@ class PyCrack:
         
         # Statistics :)
         self.found_counter = 0
+        
+        # Initialize sqlite db
+        self.db = HashDatabase()
     
     def init_wordlist(self, wl):
         """ Todo: Load some wordlist here, from sqlite/textfile or such """
@@ -66,31 +74,58 @@ class PyCrack:
         for key in wordlist:
             if hashlib.md5(key).hexdigest() == hash:
                 result = "%s:%s" % (hash,key,)
-                print "Found %s " % result
+                print "    Found %s " % result
                 occurrences = True
                 # Saves hash to "found" list
                 self.found(hash)
                 # Saves result to results.txt
                 self.save_result(result)
+                self.db.hash(hash,key)
                 return result
         if occurrences == False:
-            notfound = "Hash %s not found." % hash
+            notfound = "    Hash not found."
             print notfound
             # Saves hash to "not found" list
             self.not_found(hash)
         return False
 
+    def query_db(self, hash):
+        key = self.db.hash(hash)
+        if key == False or key == None:
+            return False
+        result = "%s:%s" % (hash,key,)
+        print "    Found %s " % result
+        
+        # Saves hash to "found" list
+        self.found(hash)
+        # Saves result to results.txt
+        self.save_result(result)
+        return result
+    
     def crack_hashes(self):
+        """ Main function for searching the hashes. """
+        from pprint import pprint
         for hash in self.hashes:
             print
-            print "Starting Google crack"
-            result = self.google_crack(hash)
-            if result == False:
-                print "Falling back to MD5 site search"
-                result = self.reverse_site_search(hash)
+            print "Starting search for: %s" % hash
+            try:
+                print "    Querying from local database.."
+                result = self.query_db(hash)
+                
+            except:
+                pass
 
+            if result == False:
+                print "    Starting Google crack"
+                result = self.google_crack(hash)
+            
+            if result == False:
+                print "    Falling back to MD5 site search"
+                result = self.reverse_site_search(hash)
     
     def reverse_site_search(self, hash):
+        """ Polls various websites for hashes """
+        
         md5_crackers = ['http://md5.thekaine.de/?hash=',
                         'http://md5.rednoize.com/?&s=md5&go.x=0&go.y=0&q=']
         for site in md5_crackers:
