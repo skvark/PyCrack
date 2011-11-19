@@ -29,8 +29,9 @@ class PyCrack:
         hashes = re.findall(r"([a-fA-F\d]{32})", str(hash_list))
         self.hashes = list(set(hashes))  # removes duplicates
         
-        # Initialize wordlist
+        # Initialize wordlists
         self.wordlist = self.init_wordlist(wordlist)
+        self.slicedWordlist = []
         
         # Urllib2 client
         self.opener = urllib2.build_opener()
@@ -118,6 +119,9 @@ class PyCrack:
             if result == False:
                 print "    Starting Google crack"
                 result = self.google_crack(hash)
+                if result == False:
+                    print "    Using extended parser"
+                    result = self.extended_google_crack(hash, self.wordlist)
             
             if result == False:
                 print "    Falling back to MD5 site search"
@@ -142,7 +146,8 @@ class PyCrack:
             for word in site_wordlist:
                 self.wordlist.append(word)
             result = self.dictionary_attack(hash, self.wordlist)
-            return result
+            if result:
+                return result
 
     def google_crack(self, hash):
         """ Do a google search for the hash and add found words to the wordlist """
@@ -160,15 +165,22 @@ class PyCrack:
             self.wordlist.append(word)
         result = self.dictionary_attack(hash, self.wordlist)
         return result
-
+		
+    def extended_google_crack(self, hash, wordlist):
+        cache = []
+        for i in range(0, len(wordlist)):
+            cache.append(wordlist[i].split(":"))
+        for i in range(0, len(cache)):
+            self.slicedWordlist.extend(wordlist[i].split("."))
+        result = self.dictionary_attack(hash, self.slicedWordlist)
+        return result
+            
 # usage example
 
 if __name__ == "__main__":
     if len(argv) > 1:
-	filename = argv[1]
+        filename = argv[1]
     else:
         filename = raw_input("File: ")  # file to search for hashes
     instance = PyCrack(filename = filename)
     instance.crack_hashes()
-
-
