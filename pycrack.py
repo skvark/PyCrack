@@ -122,17 +122,17 @@ class PyCrack:
                 self.not_found(hash)
         return False
 
-    def query_db(self, hash):
+    def query_db(self, hash, save):
         key = self.db.hash(hash)
         if key == False or key == None:
             return False
         result = u"%s:%s" % (hash,key,)
         print "    Found %s " % result
-        
-        # Saves hash to "found" list
-        self.found(hash)
-        # Saves result to results.txt
-        self.save_result(result)
+        if save == True:
+            # Saves hash to "found" list
+            self.found(hash)
+            # Saves result to results.txt
+            self.save_result(result)
         return result
     
     def crack_hashes(self, use_reverse):
@@ -142,7 +142,7 @@ class PyCrack:
             print "Starting search for: %s" % hash
             try:
                 print "    Querying from local database.."
-                result = self.query_db(hash)
+                result = self.query_db(hash, False)
                 
             except:
                 pass
@@ -159,6 +159,8 @@ class PyCrack:
                         result = self.extended_google_crack(hash, self.wordlist)
                         if result != False:
                             break
+                        elif result == False and use_reverse == False and i == self.pages-1:
+                            self.not_found(hash)
                     else:
                         break
             
