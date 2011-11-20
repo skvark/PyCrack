@@ -43,6 +43,9 @@ class PyCrack:
         self.not_found_file = open('results/notfound.txt', 'a+')
         self.result_file  = open('results/results.txt', 'a+')
         
+        # How many Google result pages to crawl
+        self.pages = 2
+        
         # Statistics :)
         self.found_counter = 0
         
@@ -117,14 +120,22 @@ class PyCrack:
                 pass
 
             if result == False:
-                print "    Starting Google crack"
-                result = self.google_crack(hash)
-                if result == False:
-                    print "    Using extended parser"
-                    result = self.extended_google_crack(hash, self.wordlist)
+                print "    Starting Google crack..."
+                for i in range(0,self.pages):
+                    if self.pages > 1:
+                        print "    Google crack, page %s/%s..." % (i+1,self.pages)
+                    result = self.google_crack(hash, i)
+                    # if not found, tries to parse results more
+                    if result == False:
+                        print "    Trying extended parser..."
+                        result = self.extended_google_crack(hash, self.wordlist)
+                        if result != False:
+                            break
+                    else:
+                        break
             
             if result == False:
-                print "    Falling back to MD5 site search"
+                print "    Falling back to MD5 site search..."
                 result = self.reverse_site_search(hash)
     
     def reverse_site_search(self, hash):
@@ -146,14 +157,13 @@ class PyCrack:
             for word in site_wordlist:
                 self.wordlist.append(word)
             result = self.dictionary_attack(hash, self.wordlist)
-            if result:
-                return result
+            return result
 
-    def google_crack(self, hash):
+    def google_crack(self, hash, page):
         """ Do a google search for the hash and add found words to the wordlist """
         try:
-            page_handle = self.opener.open('http://www.google.com/search?q=%s' \
-                                    % hash, timeout=self.default_timeout)
+            page_handle = self.opener.open('http://www.google.com/search?q=%s&start=%s' \
+                                    % (hash,page*10), timeout=self.default_timeout)
         except urllib2.URLError as e:
             self.logger.warn("URL error %s", e.message)
             return False
@@ -168,10 +178,13 @@ class PyCrack:
 		
     def extended_google_crack(self, hash, wordlist):
         cache = []
+        
+        # splits wordlist into smaller chunks
         for i in range(0, len(wordlist)):
             cache.append(wordlist[i].split(":"))
         for i in range(0, len(cache)):
             self.slicedWordlist.extend(wordlist[i].split("."))
+            
         result = self.dictionary_attack(hash, self.slicedWordlist)
         return result
             
