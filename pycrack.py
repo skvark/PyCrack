@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import hashlib
 import urllib2
 import re
 import logging
 from sys import argv
 from libs.db import *
-
+from time import time
 # Very simple md5 cracking with Google, idea taken from
 # https://github.com/juuso/BozoCrack/blob/master/BozoCrack.rb
 
@@ -13,8 +14,10 @@ from libs.db import *
 
 class PyCrack:
     """ PyCrack tries to google each hash trying to find
-	an occurrence """
+        an occurrence """
     def __init__(self, filename, wordlist = None):
+        self.start_time = time()
+
         # Logger
         logging.basicConfig(
           level=logging.DEBUG,
@@ -70,14 +73,36 @@ class PyCrack:
     def save_result(self, result):
         """Saves found hash to output.txt"""
         if result:
+            try:
+                unicode(result, "ascii")
+            except Exception:
+                result = unicode(result, "utf-8")
+            else:
+                pass
             self.result_file.write(result + '\n')
     
     def dictionary_attack(self, hash, wordlist, save):
         """ Goes throught the wordlist hash trying to find the hash. """
         occurrences = False
         for key in wordlist:
-            if hashlib.md5(key).hexdigest() == hash:
-                result = "%s:%s" % (hash,key,)
+
+            try:
+                unicode(key, "ascii")
+            except UnicodeError:
+                key = unicode(key, "utf-8")
+            else:
+                key = key.encode("utf-8")
+            
+            try:
+                unicode(hash, "ascii")
+            except UnicodeError:
+                hash = unicode(hash, "utf-8")
+            else:
+                hash = hash.encode("utf-8")
+            
+
+            if hashlib.md5(key.encode("utf-8")).hexdigest() == hash:
+                result = u"%s:%s" % (hash,key,)
                 print "    Found %s " % result
                 occurrences = True
                 # Saves hash to "found" list
@@ -98,7 +123,7 @@ class PyCrack:
         key = self.db.hash(hash)
         if key == False or key == None:
             return False
-        result = "%s:%s" % (hash,key,)
+        result = u"%s:%s" % (hash,key,)
         print "    Found %s " % result
         
         # Saves hash to "found" list
@@ -109,7 +134,6 @@ class PyCrack:
     
     def crack_hashes(self):
         """ Main function for searching the hashes. """
-        from pprint import pprint
         for hash in self.hashes:
             print
             print "Starting search for: %s" % hash
@@ -138,12 +162,16 @@ class PyCrack:
             if result == False:
                 print "    Falling back to MD5 site search..."
                 result = self.reverse_site_search(hash)
+        self.end_time = time()
+
+    def get_execution_time():
+        return self.end_time-self.start_time
     
     def reverse_site_search(self, hash):
         """ Polls various websites for hashes """
         
         md5_crackers = ['http://md5.thekaine.de/?hash=',
-                        'http://md5.rednoize.com/?&s=md5&go.x=0&go.y=0&q=']
+                        'http://md5.rednoize.com/?s=md5&go.x=0&go.y=0&q=']
         for site in md5_crackers:
             try:
                 page_handle = self.opener.open('%s%s' % (site,hash), \
@@ -176,7 +204,7 @@ class PyCrack:
             self.wordlist.append(word)
         result = self.dictionary_attack(hash, self.wordlist, False)
         return result
-		
+                
     def extended_google_crack(self, hash, wordlist):
         cache = []
         
@@ -198,3 +226,4 @@ if __name__ == "__main__":
         filename = raw_input("File: ")  # file to search for hashes
     instance = PyCrack(filename = filename)
     instance.crack_hashes()
+    print instance.get_execution_time()
