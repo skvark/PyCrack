@@ -3,16 +3,28 @@ The idea behind this rather simple piece of software can be found from here:
 
 [BozoCrack](https://github.com/juuso/BozoCrack)
 
+Differences:
+
+* Sqlite3 support
+* Logging support
+* Option to crawl multiple Google result pages
+    * Uses multiple different characters as delimiters when parsing results
+* Uses some MD5 search engines as a fallback, if Google does not give desired results
+
 ### Usage 
 
-Just run the script and specify a file which contains md5 hashes.    
+Just run the script and specify a file which contains md5 hashes.
 
 Example:     
  
-python pycrack.py file_with_hashes      
-python pycrack.py (this will ask for the file)        
+    python pycrack.py hashes.txt    
 
-Output will be saved to output.txt, script prints into command line too.
+    or
+     
+    python pycrack.py        
+
+Output will be saved to results.txt, notfound.txt and found.txt.      
+Script prints into command line too.
 
 Some hashes for testing:
 

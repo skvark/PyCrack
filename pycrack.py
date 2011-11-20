@@ -72,7 +72,7 @@ class PyCrack:
         if result:
             self.result_file.write(result + '\n')
     
-    def dictionary_attack(self, hash, wordlist):
+    def dictionary_attack(self, hash, wordlist, save):
         """ Goes throught the wordlist hash trying to find the hash. """
         occurrences = False
         for key in wordlist:
@@ -90,7 +90,8 @@ class PyCrack:
             notfound = "    Hash not found."
             print notfound
             # Saves hash to "not found" list
-            self.not_found(hash)
+            if save == True:
+                self.not_found(hash)
         return False
 
     def query_db(self, hash):
@@ -156,7 +157,7 @@ class PyCrack:
 
             for word in site_wordlist:
                 self.wordlist.append(word)
-            result = self.dictionary_attack(hash, self.wordlist)
+            result = self.dictionary_attack(hash, self.wordlist, True)
             return result
 
     def google_crack(self, hash, page):
@@ -173,7 +174,7 @@ class PyCrack:
         
         for word in google_wordlist:
             self.wordlist.append(word)
-        result = self.dictionary_attack(hash, self.wordlist)
+        result = self.dictionary_attack(hash, self.wordlist, False)
         return result
 		
     def extended_google_crack(self, hash, wordlist):
@@ -185,7 +186,7 @@ class PyCrack:
         for i in range(0, len(cache)):
             self.slicedWordlist.extend(wordlist[i].split("."))
             
-        result = self.dictionary_attack(hash, self.slicedWordlist)
+        result = self.dictionary_attack(hash, self.slicedWordlist, False)
         return result
             
 # usage example
