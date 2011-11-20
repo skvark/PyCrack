@@ -75,11 +75,14 @@ class PyCrack:
         if result:
             try:
                 unicode(result, "ascii")
-            except Exception:
+            except UnicodeError:
                 result = unicode(result, "utf-8")
+            except Exception:
+                pass
             else:
                 pass
-            self.result_file.write(result + '\n')
+            result = u"%s\n" % result
+            self.result_file.write(result.encode("utf-8"))
     
     def dictionary_attack(self, hash, wordlist, save):
         """ Goes throught the wordlist hash trying to find the hash. """
@@ -132,7 +135,7 @@ class PyCrack:
         self.save_result(result)
         return result
     
-    def crack_hashes(self):
+    def crack_hashes(self, use_reverse):
         """ Main function for searching the hashes. """
         for hash in self.hashes:
             print
@@ -159,13 +162,13 @@ class PyCrack:
                     else:
                         break
             
-            if result == False:
+            if result == False and use_reverse:
                 print "    Falling back to MD5 site search..."
                 result = self.reverse_site_search(hash)
         self.end_time = time()
 
-    def get_execution_time():
-        return self.end_time-self.start_time
+    def get_execution_time(self):
+        return "%.2f" % (self.end_time-self.start_time, )
     
     def reverse_site_search(self, hash):
         """ Polls various websites for hashes """
@@ -225,5 +228,5 @@ if __name__ == "__main__":
     else:
         filename = raw_input("File: ")  # file to search for hashes
     instance = PyCrack(filename = filename)
-    instance.crack_hashes()
+    instance.crack_hashes(use_reverse=False)
     print instance.get_execution_time()
