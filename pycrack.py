@@ -212,12 +212,11 @@ class PyCrack:
                 
     def extended_google_crack(self, hash, wordlist):
         cache = []
-        
         # splits wordlist into smaller chunks
         for i in range(0, len(wordlist)):
-            cache.append(wordlist[i].split(":"))
-        for i in range(0, len(cache)):
-            self.slicedWordlist.extend(wordlist[i].split("."))
+            cache.extend(wordlist[i].split(":"))
+        for i in cache:
+            self.slicedWordlist.extend(i.split("."))
             
         result = self.dictionary_attack(hash, self.slicedWordlist, False)
         return result
